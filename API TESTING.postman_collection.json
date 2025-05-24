@@ -184,13 +184,57 @@
 					"response": []
 				},
 				{
+					"name": "Verify that list is created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/folder/{{folder_id}}/list",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"folder",
+								"{{folder_id}}",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Delete List",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									""
+									"pm.test(\"Check that list is deleted\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -248,7 +292,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									""
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -329,7 +375,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									""
+									"pm.test(\"Check that list is deleted\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -485,6 +533,14 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Check if list is deleted",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
 				}
 			]
 		},
@@ -498,7 +554,9 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									""
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -542,66 +600,812 @@
 				},
 				{
 					"name": "Get Lists with valid data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})",
+									"pm.test(\"Check that the user can get created list\", function(){",
+									"    var jsonData = pm.response.json();",
+									"    var listName = jsonData.lists[0].name;",
+									"    pm.expect(listName).to.eql(\"brother\");",
+									"});",
+									"",
+									"const Ajv = require('ajv');",
+									"const ajv = new Ajv();",
+									"",
+									"const schema = {",
+									"    type: \"object\",",
+									"    properties: {",
+									"      lists: {",
+									"        type: \"array\",",
+									"        items: {",
+									"          type: \"object\",",
+									"          properties: {",
+									"            id: { type: \"string\" },",
+									"            name: { type: \"string\" },",
+									"            orderindex: { type: \"number\" },",
+									"            content: { type: \"string\" },",
+									"            status: { type: [\"string\", \"null\"] },",
+									"            priority: { type: [\"string\", \"null\"] },",
+									"            assignee: { type: [\"string\", \"null\"] },",
+									"            task_count: { type: \"number\" },",
+									"            due_date: { type: [\"string\", \"null\"] },",
+									"            start_date: { type: [\"string\", \"null\"] },",
+									"            folder: {",
+									"              type: \"object\",",
+									"              properties: {",
+									"                id: { type: \"string\" },",
+									"                name: { type: \"string\" },",
+									"                hidden: { type: \"boolean\" },",
+									"                access: { type: \"boolean\" },",
+									"              },",
+									"            },",
+									"            space: {",
+									"              type: \"object\",",
+									"              properties: {",
+									"                id: { type: \"string\" },",
+									"                name: { type: \"string\" },",
+									"                access: { type: \"boolean\" },",
+									"              },",
+									"            },",
+									"            archived: { type: \"boolean\" },",
+									"            override_statuses: { type: \"boolean\" },",
+									"            permission_level: { type: \"string\" },",
+									"          },",
+									"        },",
+									"      },",
+									"    },",
+									"    required: [\"lists\"],",
+									"  };",
+									"",
+									"",
+									"const validate = ajv.compile(schema);",
+									"const response = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Schema is valid\", function () {",
+									"   const valid = validate(response);",
+									"   pm.expect(valid, JSON.stringify(validate.errors)).to.be.true;",
+									"});",
+									"",
+									"let jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Print all list IDs\", function () {",
+									"    if (Array.isArray(jsonData.lists)) {",
+									"        jsonData.lists.forEach(list => {",
+									"            console.log(\"List ID:\", list.id);",
+									"        });",
+									"    } else {",
+									"        console.log(\"No lists found\");",
+									"    }",
+									"",
+									"    pm.expect(jsonData.lists.length).to.be.above(0);",
+									"});",
+									"",
+									"try {",
+									"    const response = await pm.sendRequest({",
+									"        url: \"https://api.clickup.com/api/v2/list/901511066211\",",
+									"        method: \"DELETE\",",
+									"        header:{",
+									"            \"Authorization\": pm.environment.get(\"token\") ",
+									"        }",
+									"    });",
+									"",
+									"    console.log(response.json());",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"try {",
+									"    const response = await pm.sendRequest({",
+									"        url: \"https://api.clickup.com/api/v2/folder/90156894896/list\",",
+									"        method: \"POST\",",
+									"        body: {\"name\":\"brother\"},",
+									"        header:{",
+									"            \"Authorization\": pm.environment.get(\"token\") ",
+									"        }",
+									"    });",
+									"",
+									"    console.log(response.json());",
+									"} catch (err) {",
+									"    console.error(err);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
-						"header": []
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/folder/{{folder_id}}/list",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"folder",
+								"{{folder_id}}",
+								"list"
+							]
+						}
 					},
 					"response": []
 				}
 			]
 		},
 		{
-			"name": "Delete List",
-			"event": [
+			"name": "Get Lists with invalid folder_id",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							""
-						],
-						"type": "text/javascript",
-						"packages": {}
-					}
-				}
-			],
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "{{token}}",
-						"type": "text"
-					},
-					{
-						"key": "Content-Type",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
+					"name": "Get Lists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that the proper status code is returned when folder_id is not valid\", function(){",
+									"    pm.response.to.have.status(404)",
+									"})",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
 						}
-					}
-				},
-				"url": {
-					"raw": "{{url}}/list/{{list_id}}",
-					"host": [
-						"{{url}}"
 					],
-					"path": [
-						"list",
-						"{{list_id}}"
-					]
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/folder/123/list",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"folder",
+								"123",
+								"list"
+							]
+						}
+					},
+					"response": []
 				}
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "Update space with valid data",
+			"item": [
+				{
+					"name": "Update list",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var name = pm.variables.replaceIn('{{$randomFirstName}}');",
+									"pm.collectionVariables.set(\"FirstName\", name);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})",
+									"pm.test(\"List was updated with correct name\", function () {",
+									"    const json = pm.response.json();",
+									"    var expectedName = pm.collectionVariables.get(\"FirstName\");",
+									"    pm.expect(json.name).to.eql(expectedName);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"{{FirstName}}\"\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check if list is renamed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})",
+									"pm.test(\"List was updated with correct name\", function () {",
+									"    const json = pm.response.json();",
+									"    var expectedName = pm.collectionVariables.get(\"FirstName\");",
+									"    pm.expect(json.name).to.eql(expectedName);;",
+									"});",
+									"",
+									"const Ajv = require('ajv');",
+									"const ajv = new Ajv();",
+									"",
+									"const schema = {",
+									"  \"$schema\": \"http://json-schema.org/draft-07/schema#\",",
+									"  \"title\": \"List Object Schema\",",
+									"  \"type\": \"object\",",
+									"  \"properties\": {",
+									"    \"id\": { \"type\": \"string\" },",
+									"    \"name\": { \"type\": \"string\" },",
+									"    \"deleted\": { \"type\": \"boolean\" },",
+									"    \"orderindex\": { \"type\": \"integer\" },",
+									"    \"content\": { \"type\": \"string\" },",
+									"    \"priority\": { \"type\": [\"null\", \"string\", \"number\", \"object\"] },",
+									"    \"assignee\": { \"type\": [\"null\", \"object\"] },",
+									"    \"task_count\": { \"type\": \"integer\" },",
+									"    \"due_date\": { \"type\": [\"null\", \"string\"] },",
+									"    \"start_date\": { \"type\": [\"null\", \"string\"] },",
+									"    \"folder\": {",
+									"      \"type\": \"object\",",
+									"      \"properties\": {",
+									"        \"id\": { \"type\": \"string\" },",
+									"        \"name\": { \"type\": \"string\" },",
+									"        \"hidden\": { \"type\": \"boolean\" },",
+									"        \"access\": { \"type\": \"boolean\" }",
+									"      },",
+									"      \"required\": [\"id\", \"name\", \"hidden\", \"access\"]",
+									"    },",
+									"    \"space\": {",
+									"      \"type\": \"object\",",
+									"      \"properties\": {",
+									"        \"id\": { \"type\": \"string\" },",
+									"        \"name\": { \"type\": \"string\" },",
+									"        \"access\": { \"type\": \"boolean\" }",
+									"      },",
+									"      \"required\": [\"id\", \"name\", \"access\"]",
+									"    },",
+									"    \"inbound_address\": { \"type\": \"string\" },",
+									"    \"archived\": { \"type\": \"boolean\" },",
+									"    \"override_statuses\": { \"type\": \"boolean\" },",
+									"    \"statuses\": {",
+									"      \"type\": \"array\",",
+									"      \"items\": {",
+									"        \"type\": \"object\",",
+									"        \"properties\": {",
+									"          \"id\": { \"type\": \"string\" },",
+									"          \"status\": { \"type\": \"string\" },",
+									"          \"orderindex\": { \"type\": \"integer\" },",
+									"          \"color\": { \"type\": \"string\" },",
+									"          \"type\": { \"type\": \"string\" },",
+									"          \"status_group\": { \"type\": \"string\" }",
+									"        },",
+									"        \"required\": [\"id\", \"status\", \"orderindex\", \"color\", \"type\", \"status_group\"]",
+									"      }",
+									"    },",
+									"    \"permission_level\": { \"type\": \"string\" }",
+									"  },",
+									"  \"required\": [",
+									"    \"id\",",
+									"    \"name\",",
+									"    \"deleted\",",
+									"    \"orderindex\",",
+									"    \"content\",",
+									"    \"priority\",",
+									"    \"assignee\",",
+									"    \"task_count\",",
+									"    \"due_date\",",
+									"    \"start_date\",",
+									"    \"folder\",",
+									"    \"space\",",
+									"    \"inbound_address\",",
+									"    \"archived\",",
+									"    \"override_statuses\",",
+									"    \"statuses\",",
+									"    \"permission_level\"",
+									"  ]",
+									"}",
+									"",
+									"const validate = ajv.compile(schema);",
+									"const response = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Schema is valid\", function () {",
+									"   const valid = validate(response);",
+									"   pm.expect(valid, JSON.stringify(validate.errors)).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Update list with empty body",
+			"item": [
+				{
+					"name": "Update list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is not updated with empty body\", function(){",
+									"    pm.response.to.have.status(400)",
+									"})",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete list with valid list_id",
+			"item": [
+				{
+					"name": "Delete List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is deleted\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check if list is deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that the user cannot get deleted list\", function(){",
+									"    pm.response.to.have.status(404)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Deleted list that was already deleted",
+			"item": [
+				{
+					"name": "Create List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is created\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"name\":\"child\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/folder/{{folder_id}}/list",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"folder",
+								"{{folder_id}}",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that list is deleted\", function(){",
+									"    pm.response.to.have.status(200)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check if list is deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that the user cannot get deleted list\", function(){",
+									"    pm.response.to.have.status(404)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Check that deleted list is not found\", function(){",
+									"    pm.response.to.have.status(404)",
+									"})"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{url}}/list/{{list_id}}",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"list",
+								"{{list_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "name",
+			"value": ""
+		},
+		{
+			"key": "FirstName",
+			"value": ""
 		}
 	]
 }
